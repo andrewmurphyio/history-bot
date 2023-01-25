@@ -1,8 +1,14 @@
 import axios from 'axios';
 import { config } from 'dotenv';
+import { ChatGPTAPIBrowser, ChatGPTAPI, getOpenAIAuth } from 'chatgpt'
 
 config();
 console.log(process.env) // remove this after you've confirmed it is working
+
+// const openAIBrowser = new ChatGPTAPIBrowser({
+//     email: process.env.OPENAI_EMAIL,
+//     password: process.env.OPENAI_PASSWORD
+// })
 
 export async function handler(event, context) {
     // Extract the event data from the event
@@ -35,15 +41,15 @@ export async function handler(event, context) {
         };
 
         const openApiResponse = await axios.post('https://api.openai.com/v1/engines/davinci-codex/completions', {
-            prompt: `The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly
+            prompt: `The following is a conversation with an AI assistant called HistoryBot. The assistant is helpful, creative, clever, and very friendly
             Human: Hello, who are you?
-            AI: I am an AI created by Andrew Murphy. My name is HistoryBot. How can I help you today?
-            Human: ${requestMessage}
-            AI:`,
-            temperature: 0.7,
+            HistoryBot: I am an AI created by Andrew Murphy. My name is HistoryBot. How can I help you today?
+            Human: ${requestMessage.replace(/\<\@U04L23YAH38\>/g, "")}
+            HistoryBot: `,
+            temperature: 0.3,
             max_tokens: 1024,
             user: eventData.event.user,
-            stop: [" Human:", " AI:"]//,
+            stop: ["Human:", "HistoryBot:"]//,
             //session_id: "HistoryBot"
         },{headers:headers});
 
@@ -52,6 +58,16 @@ export async function handler(event, context) {
 
         console.log("openApiResponse.data.choices[0]", openApiResponse.data.choices[0]);
         const returnMessage = openApiResponse.data.choices[0].text;
+
+        // await openAIBrowser.initSession();
+        // const chatGptResponse = await openAIBrowser.sendMessage(`${requestMessage.replace(/\<\@U04L23YAH38\>/g, "")}`);
+
+                
+      
+
+        // const returnMessage = chatGptResponse.response;
+        // await api.closeSession();
+
         console.log("returnMessage", returnMessage);
         // return;
 
