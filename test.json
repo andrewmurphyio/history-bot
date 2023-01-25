@@ -1,0 +1,51 @@
+{
+    "body": {
+      "token": "IoZqL117GE9YvYGY93aQ3QyE",
+      "team_id": "T0J2S803X",
+      "context_team_id": "T0J2S803X",
+      "context_enterprise_id": null,
+      "api_app_id": "A04LYBW3448",
+      "event": {
+        "client_msg_id": "fe0aeb6e-5a02-4dc9-b0ad-7ab7305bf942",
+        "type": "message",
+        "text": "what is 2+2?",
+        "user": "UC4NJPD3L",
+        "ts": "1674557493.875699",
+        "blocks": [
+          {
+            "type": "rich_text",
+            "block_id": "VrUX3",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "what is 2+2?"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "team": "T0J2S803X",
+        "channel": "D04L24BKP54",
+        "event_ts": "1674557493.875699",
+        "channel_type": "im"
+      },
+      "type": "event_callback",
+      "event_id": "Ev04LBCNU3DJ",
+      "event_time": 1674557493,
+      "authorizations": [
+        {
+          "enterprise_id": null,
+          "team_id": "T0J2S803X",
+          "user_id": "U04L23YAH38",
+          "is_bot": true,
+          "is_enterprise_install": false
+        }
+      ],
+      "is_ext_shared_channel": false,
+      "event_context": "4-eyJldCI6Im1lc3NhZ2UiLCJ0aWQiOiJUMEoyUzgwM1giLCJhaWQiOiJBMDRMWUJXMzQ0OCIsImNpZCI6IkQwNEwyNEJLUDU0In0"
+    }
+  }
