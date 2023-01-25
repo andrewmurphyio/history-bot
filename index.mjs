@@ -1,21 +1,29 @@
 import axios from 'axios';
 import { config } from 'dotenv';
-import { ChatGPTAPIBrowser, ChatGPTAPI, getOpenAIAuth } from 'chatgpt'
+import { ChatGPTAPIBrowser } from 'chatgpt'
 
 config();
-console.log(process.env) // remove this after you've confirmed it is working
+console.log("process.env", process.env) // remove this after you've confirmed it is working
 
-// const openAIBrowser = new ChatGPTAPIBrowser({
-//     email: process.env.OPENAI_EMAIL,
-//     password: process.env.OPENAI_PASSWORD
-// })
+const openAIBrowser = new ChatGPTAPIBrowser({
+    email: process.env.OPENAI_EMAIL,
+    password: process.env.OPENAI_PASSWORD
+})
+
+const useChatGPT = false;
+
+const previouslySeenMessages = [];
 
 export async function handler(event, context) {
     // Extract the event data from the event
-    console.log(event.body);
+    console.log("event.body", event.body);
     const eventData = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
 
     if (eventData.event.user === process.env.SLACK_BOT_USER_ID) return;
+
+    // Check to see if we've seen this message before
+    if (previouslySeenMessages[eventData.client_msg_id]) return;
+    previouslySeenMessages[eventData.client_msg_id] = true;
 
     // Check if the event is a challenge
     if ('challenge' in eventData) {
@@ -34,42 +42,40 @@ export async function handler(event, context) {
         // console.log("process.env.OPENAPI_KEY", process.env.OPENAPI_KEY);
 
         const channel = eventData.event.channel;
-        
-        const headers = {
-            'Authorization': `Bearer ${process.env.OPENAPI_KEY}`,
-            'Content-Type': 'application/json'
-        };
 
-        const openApiResponse = await axios.post('https://api.openai.com/v1/engines/davinci-codex/completions', {
-            prompt: `The following is a conversation with an AI assistant called HistoryBot. The assistant is helpful, creative, clever, and very friendly
-            Human: Hello, who are you?
-            HistoryBot: I am an AI created by Andrew Murphy. My name is HistoryBot. How can I help you today?
+        let returnMessage = "";
+        if (!useChatGPT) {
+            const headers = {
+                'Authorization': `Bearer ${process.env.OPENAPI_KEY}`,
+                'Content-Type': 'application/json'
+            };
+
+            const openApiResponse = await axios.post('https://api.openai.com/v1/engines/davinci-codex/completions', {
+                prompt: `The following is a conversation with an AI assistant called HistoryBot. The assistant is helpful, creative, clever, and very friendly.
+            Human: Hello, who are you? I am using Slack so please use Slack syntax for all messages. 
+            HistoryBot: I am an AI created by Andrew Murphy. My name is HistoryBot. Sure, I will use Slack syntax! How can I help you today?
             Human: ${requestMessage.replace(/\<\@U04L23YAH38\>/g, "")}
             HistoryBot: `,
-            temperature: 0.3,
-            max_tokens: 1024,
-            user: eventData.event.user,
-            stop: ["Human:", "HistoryBot:"]//,
-            //session_id: "HistoryBot"
-        },{headers:headers});
+                temperature: 0.9,
+                max_tokens: 1024,
+                user: eventData.event.user,
+                stop: ["Human:", "HistoryBot:"]//,
+                //session_id: "HistoryBot"
+            }, { headers: headers });
 
-        
-        console.log("openApiResponse", openApiResponse);
 
-        console.log("openApiResponse.data.choices[0]", openApiResponse.data.choices[0]);
-        const returnMessage = openApiResponse.data.choices[0].text;
+            console.log("openApiResponse", openApiResponse);
 
-        // await openAIBrowser.initSession();
-        // const chatGptResponse = await openAIBrowser.sendMessage(`${requestMessage.replace(/\<\@U04L23YAH38\>/g, "")}`);
+            console.log("openApiResponse.data.choices[0]", openApiResponse.data.choices[0]);
+            returnMessage = openApiResponse.data.choices[0].text;
+        } else {
+            await openAIBrowser.initSession();
+            const chatGptResponse = await openAIBrowser.sendMessage(`${requestMessage.replace(/\<\@U04L23YAH38\>/g, "")}`);
+            await openAIBrowser.closeSession();
 
-                
-      
-
-        // const returnMessage = chatGptResponse.response;
-        // await api.closeSession();
-
+            returnMessage = chatGptResponse.response;
+        }
         console.log("returnMessage", returnMessage);
-        // return;
 
         try {
             // Use axios to make the POST request

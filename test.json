@@ -2,7 +2,7 @@
     "body": {
       "event": {
         "type": "message",
-        "text": "write a javascript function that takes a string called str and a number called n as parameters. it should return a string that is str padded to the length of n with spaces.",
+        "text": "write a python function that takes a string called str and a number called n as parameters. it should return a string that is str padded to the length of n with spaces.",
         "user": "UC4NJPD3L",
         "team": "T0J2S803X",
         "channel": "D04L24BKP54",
