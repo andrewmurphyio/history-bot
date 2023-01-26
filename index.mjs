@@ -31,7 +31,7 @@ export async function handler(event, context) {
         return;
     }
     
-    previouslySeenMessages[eventData.client_msg_id] = true;
+    previouslySeenMessages[eventData.event.client_msg_id] = true;
 
     // Check if the event is a challenge
     if ('challenge' in eventData) {
