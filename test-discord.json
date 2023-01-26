@@ -1,0 +1,49 @@
+{"body": {
+    "app_permissions": "1098005347905",
+    "application_id": "1068034378036424756",
+    "channel_id": "1068035337194045584",
+    "data": {
+        "guild_id": "1068035337194045581",
+        "id": "1068049065310437397",
+        "name": "historybot",
+        "options": [
+            {
+                "name": "question",
+                "type": 3,
+                "value": "what is 2+2?"
+            }
+        ],
+        "type": 1
+    },
+    "entitlement_sku_ids": [],
+    "guild_id": "1068035337194045581",
+    "guild_locale": "en-US",
+    "id": "1068057642125234238",
+    "locale": "en-GB",
+    "member": {
+        "avatar": null,
+        "communication_disabled_until": null,
+        "deaf": false,
+        "flags": 0,
+        "is_pending": false,
+        "joined_at": "2023-01-26T05:11:07.541000+00:00",
+        "mute": false,
+        "nick": null,
+        "pending": false,
+        "permissions": "4398046511103",
+        "premium_since": null,
+        "roles": [],
+        "user": {
+            "avatar": "8e9d22d0ccea12842b01c8aee6a3d607",
+            "avatar_decoration": null,
+            "discriminator": "4432",
+            "display_name": null,
+            "id": "563891420214329344",
+            "public_flags": 0,
+            "username": "andrewmurphy.io"
+        }
+    },
+    "token": "aW50ZXJhY3Rpb246MTA2ODA1NzY0MjEyNTIzNDIzODptZlhYeWtOczFwUEVTSmJuMVltdWNXZ3dGY3o1aGU1SWNidlVEN0xWdlJ4T2hhaEc5NEVqWGxzVmRZQTlHNmRKbk9TbzV2OWdkcG5uYjF4NXZBcUdXdzVkY2JEU1paMXVib0ZROVk5U05ZNWhOYXJqTG5JMFp5UTlPdHhQRFcwUQ",
+    "type": 2,
+    "version": 1
+}}
