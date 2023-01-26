@@ -19,15 +19,24 @@ export async function handler(event, context) {
     console.log("event.body", event.body);
     const eventData = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
 
-    if (eventData.event.user === process.env.SLACK_BOT_USER_ID) return;
+    if (eventData.event.user === process.env.SLACK_BOT_USER_ID) {
+        console.log(`message is from ${process.env.SLACK_BOT_USER_ID} so I am returning`);
+        return;
+    };
 
     // Check to see if we've seen this message before
-    if (previouslySeenMessages[eventData.client_msg_id]) return;
+    if (previouslySeenMessages[eventData.client_msg_id]) {
+        console.log(`previous seen message id ${eventData.client_msg_id} so I am returning`);
+        return;
+    }
+    
     previouslySeenMessages[eventData.client_msg_id] = true;
 
     // Check if the event is a challenge
     if ('challenge' in eventData) {
         const challenge = eventData.challenge;
+        console.log(`it's a challenge! ${challenge}`);
+        
         return {
             statusCode: 200,
             body: JSON.stringify({ challenge }),
