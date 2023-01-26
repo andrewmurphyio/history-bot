@@ -63,11 +63,11 @@ export async function handler(event, context) {
                 };
 
                 const openApiResponse = await axios.post('https://api.openai.com/v1/engines/davinci-codex/completions', {
-                    prompt: `The following is a conversation with an AI assistant called HistoryBot. The assistant is helpful, creative, clever, and very friendly.
+                    prompt: `The following is a conversation with an AI assistant called Johny Fyve. The assistant is helpful, creative, clever, and very friendly.
             Human: Hello, who are you? I am using Slack so please use Slack syntax for all messages. 
-            HistoryBot: I am an AI created by Andrew Murphy. My name is HistoryBot. Sure, I will use Slack syntax! How can I help you today?
-            Human: ${requestMessage.replace(/\<\@U04L23YAH38\>/g, "")}
-            HistoryBot: `,
+            Johny Fyve: I am an AI created by Upstart Factory. My name is Johny Fyve. Sure, I will use Slack syntax! How can I help you today?
+            Human: ${requestMessage.replace(/\<\@B04LKP7RJLW\>/g, "")}
+            Johny Fyve: `,
                     temperature: 0.9,
                     max_tokens: 1024,
                     user: eventData.event.user,
