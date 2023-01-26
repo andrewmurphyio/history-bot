@@ -25,6 +25,7 @@ export async function handler(event, context) {
     };
 
     // Check to see if we've seen this message before
+    console.log("eventData.event.client_msg_id", eventData.event.client_msg_id);
     if (previouslySeenMessages[eventData.event.client_msg_id]) {
         console.log(`previous seen message id ${eventData.event.client_msg_id} so I am returning`);
         return;
