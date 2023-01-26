@@ -19,7 +19,7 @@ export async function handler(event, context) {
     console.log("event.body", event.body);
     const eventData = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
 
-    if (event.eventData.event.type in ["app_mention"] || (event.eventData.event.type in ["message"] && event.eventData.event.channel_type in ["im"])) {
+    if (eventData.event.type in ["app_mention"] || (eventData.event.type in ["message"] && eventData.event.channel_type in ["im"])) {
         if (eventData.event.user === process.env.SLACK_BOT_USER_ID) {
             console.log(`message is from ${process.env.SLACK_BOT_USER_ID} so I am returning`);
             return;
