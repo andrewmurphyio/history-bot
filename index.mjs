@@ -25,8 +25,8 @@ export async function handler(event, context) {
     };
 
     // Check to see if we've seen this message before
-    if (previouslySeenMessages[eventData.client_msg_id]) {
-        console.log(`previous seen message id ${eventData.client_msg_id} so I am returning`);
+    if (previouslySeenMessages[eventData.event.client_msg_id]) {
+        console.log(`previous seen message id ${eventData.event.client_msg_id} so I am returning`);
         return;
     }
     
@@ -36,7 +36,7 @@ export async function handler(event, context) {
     if ('challenge' in eventData) {
         const challenge = eventData.challenge;
         console.log(`it's a challenge! ${challenge}`);
-        
+
         return {
             statusCode: 200,
             body: JSON.stringify({ challenge }),
