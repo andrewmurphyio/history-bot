@@ -9,7 +9,7 @@ const headers = {
 }
 
 let command_data = {
-  "name": "historybot",
+  "name": "financebot",
   "type": 1,
   "description": "replies with sarcasm",
   "dm_permission": true,

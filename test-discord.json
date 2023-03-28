@@ -5,12 +5,12 @@
     "data": {
         "guild_id": "1068035337194045581",
         "id": "1068049065310437397",
-        "name": "historybot",
+        "name": "financebot",
         "options": [
             {
                 "name": "question",
                 "type": 3,
-                "value": "what is 2+2?"
+                "value": "Please calculate what I would need to retire if I am 37, want to retire at 65. I have about 80k stashed away. I want a return that's between 6 and 8% per year. I can put away $1k a month"
             }
         ],
         "type": 1

@@ -1,24 +1,33 @@
 import axios from 'axios';
 import { config } from 'dotenv';
-import { ChatGPTAPIBrowser } from 'chatgpt'
+
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 config();
-console.log("process.env", process.env) // remove this after you've confirmed it is working
+// console.log("process.env", process.env) // remove this after you've confirmed it is working
 
-const openAIBrowser = new ChatGPTAPIBrowser({
-    email: process.env.OPENAI_EMAIL,
-    password: process.env.OPENAI_PASSWORD
-})
-
-const useChatGPT = false;
+const promptPath = path.join(__dirname, 'prompt.md');
+const prompt = fs.readFileSync(promptPath, 'utf8');
+// console.log("prompt", prompt);
+// console.log("process.env", process.env) // remove this after you've confirmed it is working
 
 const previouslySeenMessages = [];
+const chatLog = [
+    {
+        role: "system",
+        content: prompt
+    }
+];
 
 export async function handler(event, context) {
     // Extract the event data from the event
-    console.log("event.body", event.body);
+    // console.log("event.body", event.body);
     const eventData = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
-    console.log("eventData", eventData);
+    // console.log("eventData", eventData);
 
     if (eventData.event.type == "app_mention" || (eventData.event.type == "message" && eventData.event.channel_type == "im")) {
         if (eventData.event.user === process.env.SLACK_BOT_USER_ID) {
@@ -50,45 +59,36 @@ export async function handler(event, context) {
         } else {
             // If it's not a challenge, extract the message
             const requestMessage = eventData.event.text;
-            console.log("requestMessage", requestMessage);
+            // console.log("requestMessage", requestMessage);
             // console.log("process.env.OPENAPI_KEY", process.env.OPENAPI_KEY);
 
             const channel = eventData.event.channel;
 
-            let returnMessage = "";
-            if (!useChatGPT) {
-                const headers = {
-                    'Authorization': `Bearer ${process.env.OPENAPI_KEY}`,
-                    'Content-Type': 'application/json'
-                };
+            const headers = {
+                'Authorization': `Bearer ${process.env.OPENAPI_KEY}`,
+                'Content-Type': 'application/json'
+            };
+            chatLog.push({
+                role: "user",
+                content: requestMessage
+            });
 
-                const openApiResponse = await axios.post('https://api.openai.com/v1/engines/davinci-codex/completions', {
-                    prompt: `The following is a conversation with an AI assistant called HistoryBot. The assistant is helpful, creative, clever, and very friendly.
-            Human: Hello, who are you? I am using Slack so please use Slack syntax for all messages. 
-            HistoryBot: I am an AI created by Andrew Murphy. My name is HistoryBot. Sure, I will use Slack syntax! How can I help you today?
-            Human: ${requestMessage.replace(/\<\@U04L23YAH38\>/g, "")}
-            HistoryBot: `,
-                    temperature: 0.9,
-                    max_tokens: 1024,
-                    user: eventData.event.user,
-                    stop: ["Human:", "HistoryBot:"]//,
-                    //session_id: "HistoryBot"
-                }, { headers: headers });
+            const openApiResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
+                messages: chatLog,
+                temperature: 1,
+                // max_tokens: 1024,
+                user: eventData.event.user,
+                // stop: ["user:", "assistant:"],
+                model: "gpt-4",
+            }, { headers: headers });
 
 
-                console.log("openApiResponse", openApiResponse);
+            // console.log("openApiResponse", openApiResponse);
 
-                console.log("openApiResponse.data.choices[0]", openApiResponse.data.choices[0]);
-                returnMessage = openApiResponse.data.choices[0].text;
-            } else {
-                await openAIBrowser.initSession();
-                const chatGptResponse = await openAIBrowser.sendMessage(`${requestMessage.replace(/\<\@U04L23YAH38\>/g, "")}`);
-                await openAIBrowser.closeSession();
-
-                returnMessage = chatGptResponse.response;
-            }
+            // console.log("openApiResponse.data.choices[0]", openApiResponse.data.choices[0]);
+            const returnMessage = openApiResponse.data.choices[0].message.content;
+            chatLog.push(openApiResponse.data.choices[0].message);
             console.log("returnMessage", returnMessage);
-
             try {
                 // Use axios to make the POST request
                 const response = await axios({
@@ -121,7 +121,7 @@ export async function handler(event, context) {
             }
         }
     } else {
-        
+
         console.log("unkown event type", eventData.event);
         return {
             statusCode: 200,

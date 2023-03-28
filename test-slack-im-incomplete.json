@@ -1,9 +1,9 @@
 {
     "body": {
       "event": {
-        "client_msg_id": 123,
+        "client_msg_id": 456,
         "type": "message",
-        "text": "Please calculate balance I would have when I retire if I am 37, want to retire at 65. I have about 80k stashed away. I want a return that's between 6 and 8% per year. Assume half way. I can put away $1k a month",
+        "text": "Please calculate balance I would have when I retire if I am 37, want to retire at 65. I have about 80k stashed away. I want a return that's between 6 and 8% per year.",
         "user": "UC4NJPD3L",
         "team": "T0J2S803X",
         "channel": "D04L24BKP54",
