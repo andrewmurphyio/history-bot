@@ -132,13 +132,13 @@ async function responseToMessage(message) {
     // console.log(repliedMessage);
 
     if (message.channel.type === ChannelType.DM) {
-      console.log("DM repliedMessage.channelId", message.channelId);
+      // console.log("DM repliedMessage.channelId", message.channelId);
       threads[message.channelId] = chatLog;
     } else {
-      console.log("Channel repliedMessage.id", repliedMessage.id);
+      // console.log("Channel repliedMessage.id", repliedMessage.id);
       threads[repliedMessage.id] = chatLog;
     }
-    console.log("threads", threads);
+    // console.log("threads", threads);
   }
 
 }
