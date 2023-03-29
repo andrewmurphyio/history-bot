@@ -168,11 +168,11 @@ async function respondToMessage(message) {
 
     if (command && command.command) {
       const commandValue = await callCommand(command.command, command.arguments);
-      // console.log("commandValue", commandValue);
+      console.log("commandValue", commandValue);
       const modelResponse = { command: command.command, uuid: command.uuid, value: commandValue };
       const modelResponseString = `Model: ${JSON.stringify(modelResponse)}`;
-      message.content = modelResponseString;
-      await respondToMessage(message);
+      repliedMessage.content = modelResponseString;
+      await respondToMessage(repliedMessage);
     }
   }
 }
