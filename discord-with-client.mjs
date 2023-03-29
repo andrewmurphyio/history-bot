@@ -19,7 +19,7 @@ prompt = prompt.replace("AI Chatbot called FinanceBot that", "AI Chatbot called 
 
 const threads = {};
 
-import { Client, IntentsBitField, Events, Partials, ChannelType, Message, ThreadChannel } from 'discord.js';
+import { Client, IntentsBitField, Events, Partials, ChannelType, Message, ThreadChannel, ClientUser } from 'discord.js';
 
 const myIntents = new IntentsBitField();
 myIntents.add(
@@ -42,15 +42,20 @@ const client = new Client({
   ]
 });
 
+
+/** @type {ClientUser} */
+let botUser;
+
 client.once(Events.ClientReady, c => {
+  botUser = c.user;
   console.log(`Ready! Logged in as ${c.user.tag}`);
 });
 
 
 client.on(Events.MessageCreate, async message => {
-  console.log("MessageCreate", message);
+  // console.log("MessageCreate", message);
   if (message.author.bot) return;
-  // console.log("mentions bot", message.mentions.users.has(process.env.DISCORD_BOT_ID));
+  // console.log("mentions bot", message.mentions.users.has(botUser.id));
 
   // console.log("message.channel", message.channel);
 
@@ -60,7 +65,7 @@ client.on(Events.MessageCreate, async message => {
 
   } else if (message.channel.type === ChannelType.PublicThread && message.channel.name === "FinanceBot") {
     await respondToMessage(message);
-  } else if (message.mentions.users && message.mentions.users.has(process.env.DISCORD_BOT_ID)) {
+  } else if (message.mentions.users && message.mentions.users.has(botUser.id)) {
     // console.log("mentions bot");
     await respondToMessage(message);
   }
@@ -72,14 +77,14 @@ client.on(Events.MessageCreate, async message => {
  * @param {Message<boolean>} message 
  */
 async function respondToMessage(message) {
-  const requestMessage = message.content.replace(`<@${process.env.DISCORD_BOT_ID}>`, "").trim();
+  const requestMessage = message.content.replace(`<@${botUser.id}>`, "").trim();
 
-  console.log("message.channel.type ", message.channel.type);
+  // console.log("message.channel.type ", message.channel.type);
 
   if (requestMessage === 'ping') {
     await message.reply('Pong!');
   } else {
-    let chatLog = [];
+    let chatLog = null;
 
     if (message.channel.type === ChannelType.DM) {
       // Get the previous chatLog
@@ -98,9 +103,12 @@ async function respondToMessage(message) {
       content: requestMessage
     });
 
+    // console.log("chatLog", chatLog);
+
+    console.log("calling openai", requestMessage);
     const openApiResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
       messages: chatLog,
-      temperature: 0.7,
+      temperature: 0.5,
       user: message.author.id,
       model: "gpt-4",
     }, {
@@ -113,30 +121,30 @@ async function respondToMessage(message) {
     // console.log("openApiResponse", openApiResponse);
 
     // console.log("openApiResponse.data.choices[0]", openApiResponse.data.choices[0]);
-    const returnMessage = openApiResponse.data.choices[0].message.content;
+    const returnMessage = openApiResponse.data.choices[0].message.content.trim();
     chatLog.push(openApiResponse.data.choices[0].message);
-    // console.log("returnMessage", returnMessage);
+    console.log("returnMessage", returnMessage);
 
     /** @type {Message} */
     let repliedMessage;
-    let command;
-    // try {
-    const obj = JSON.parse(returnMessage);
+    
+    const obj = returnMessage.startsWith("{") ? JSON.parse(returnMessage) : { message: returnMessage, command: null };
+    let chatMessage = obj.message;
+    let command = obj.command;
 
     /** @type {ThreadChannel} */
     let thread;
     if (message.channel.type === ChannelType.DM) {
       thread = null;
-      repliedMessage = message.channel.send(obj.message);
+      repliedMessage = message.channel.send(chatMessage);
     } else if (message.channel.type === ChannelType.PublicThread) {
       thread = message.channel;
-      repliedMessage = await thread.send(obj.message);
+      repliedMessage = await thread.send(chatMessage);
     } else {
       thread = await message.startThread({ name: "FinanceBot" });
-      repliedMessage = await thread.send(obj.message);
+      repliedMessage = await thread.send(chatMessage);
     }
 
-    command = obj.command;
     // } catch (error) {
     //   if (message.channel.type === ChannelType.DM) {
     //     repliedMessage = message.channel.send(obj.message);
