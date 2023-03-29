@@ -19,7 +19,7 @@ prompt = prompt.replace("AI Chatbot called FinanceBot that", "AI Chatbot called 
 
 const threads = {};
 
-import { Client, IntentsBitField, Events, Partials, ChannelType, Message } from 'discord.js';
+import { Client, IntentsBitField, Events, Partials, ChannelType, Message, ThreadChannel } from 'discord.js';
 
 const myIntents = new IntentsBitField();
 myIntents.add(
@@ -48,7 +48,7 @@ client.once(Events.ClientReady, c => {
 
 
 client.on(Events.MessageCreate, async message => {
-  // console.log("MessageCreate", message);
+  console.log("MessageCreate", message);
   if (message.author.bot) return;
   // console.log("mentions bot", message.mentions.users.has(process.env.DISCORD_BOT_ID));
 
@@ -56,11 +56,13 @@ client.on(Events.MessageCreate, async message => {
 
   if (message.channel.type === ChannelType.DM) {
     // console.log("DM");
-    await responseToMessage(message);
+    await respondToMessage(message);
 
+  } else if (message.channel.type === ChannelType.PublicThread && message.channel.name === "FinanceBot") {
+    await respondToMessage(message);
   } else if (message.mentions.users && message.mentions.users.has(process.env.DISCORD_BOT_ID)) {
     // console.log("mentions bot");
-    await responseToMessage(message);
+    await respondToMessage(message);
   }
 
 });
@@ -69,41 +71,44 @@ client.on(Events.MessageCreate, async message => {
  * 
  * @param {Message<boolean>} message 
  */
-async function responseToMessage(message) {
+async function respondToMessage(message) {
   const requestMessage = message.content.replace(`<@${process.env.DISCORD_BOT_ID}>`, "").trim();
+
+  console.log("message.channel.type ", message.channel.type);
 
   if (requestMessage === 'ping') {
     await message.reply('Pong!');
   } else {
-    const headers = {
-      'Authorization': `Bearer ${process.env.OPENAPI_KEY}`,
-      'Content-Type': 'application/json'
-    };
-
     let chatLog = [];
 
     if (message.channel.type === ChannelType.DM) {
       // Get the previous chatLog
-      chatLog = threads[message.channelId] ?? [{ role: "system", content: prompt }];
-    }
-    else if (message.reference) {
+      chatLog = threads[message.channelId];
+    } else if (message.channel.type === ChannelType.PublicThread) {
+      chatLog = threads[message.channel.id];
+    } else if (message.reference) {
       // Get the previous chatLog
       chatLog = threads[message.reference.messageId];
-    } else {
-      chatLog = [{ role: "system", content: prompt }];
     }
 
+    chatLog = chatLog ?? [{ role: "system", content: prompt }];
+
     chatLog.push({
-      role: "user",
+      role: message.author.bot ? "assistant" : "user",
       content: requestMessage
     });
 
     const openApiResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-      messages: [...chatLog, { role: "user", content: requestMessage }],
-      temperature: 0.5,
+      messages: chatLog,
+      temperature: 0.7,
       user: message.author.id,
       model: "gpt-4",
-    }, { headers: headers });
+    }, {
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAPI_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
 
     // console.log("openApiResponse", openApiResponse);
 
@@ -112,37 +117,87 @@ async function responseToMessage(message) {
     chatLog.push(openApiResponse.data.choices[0].message);
     // console.log("returnMessage", returnMessage);
 
+    /** @type {Message} */
     let repliedMessage;
-    try {
-      const obj = JSON.parse(returnMessage);
+    let command;
+    // try {
+    const obj = JSON.parse(returnMessage);
 
-      if (message.channel.type === ChannelType.DM) {
-        repliedMessage = message.channel.send(obj.message);
-      } else {
-        repliedMessage = await message.reply(obj.message);
-      }
-    } catch (error) {
-      if (message.channel.type === ChannelType.DM) {
-        repliedMessage = message.channel.send(obj.message);
-      } else {
-        repliedMessage = await message.reply(error);
-      }
+    /** @type {ThreadChannel} */
+    let thread;
+    if (message.channel.type === ChannelType.DM) {
+      thread = null;
+      repliedMessage = message.channel.send(obj.message);
+    } else if (message.channel.type === ChannelType.PublicThread) {
+      thread = message.channel;
+      repliedMessage = await thread.send(obj.message);
+    } else {
+      thread = await message.startThread({ name: "FinanceBot" });
+      repliedMessage = await thread.send(obj.message);
     }
+
+    command = obj.command;
+    // } catch (error) {
+    //   if (message.channel.type === ChannelType.DM) {
+    //     repliedMessage = message.channel.send(obj.message);
+    //   } else {
+    //     repliedMessage = message.channel.send(obj.message);
+    //   }
+    // }
 
     // console.log(repliedMessage);
 
     if (message.channel.type === ChannelType.DM) {
       // console.log("DM repliedMessage.channelId", message.channelId);
       threads[message.channelId] = chatLog;
+    } else if (thread) {
+      threads[thread.id] = chatLog;
     } else {
       // console.log("Channel repliedMessage.id", repliedMessage.id);
       threads[repliedMessage.id] = chatLog;
     }
     // console.log("threads", threads);
-  }
 
+    if (command && command.command) {
+      const commandValue = await callCommand(command.command, command.arguments);
+      // console.log("commandValue", commandValue);
+      const modelResponse = { command: command.command, uuid: command.uuid, value: commandValue };
+      const modelResponseString = `Model: ${JSON.stringify(modelResponse)}`;
+      message.content = modelResponseString;
+      await respondToMessage(message);
+    }
+  }
 }
 
+
+async function callCommand(commandName, args) {
+  if (commandName === "calculateBalance") {
+    return await calculateBalance(args);
+  } else {
+    throw Error(`Invalid commandName: ${commandName}`);
+  }
+}
+
+async function calculateBalance(args) {
+  const currentValue = args.find(v => v.name === "currentValue").value;
+  // console.log("currentValue", currentValue);
+  const yearsToInvest = args.find(v => v.name === "yearsToInvest").value;
+  // console.log("yearsToInvest", yearsToInvest);
+  const returnPercentage = args.find(v => v.name === "returnPercentage").value;
+  // console.log("returnPercentage", returnPercentage);
+  const annualRegularContribution = args.find(v => v.name === "annualRegularContribution").value;
+  // console.log("annualRegularContribution", annualRegularContribution);
+
+  const annualReturnRate = 1 + (returnPercentage / 100);
+  let futureValue = currentValue;
+
+  for (let i = 0; i < yearsToInvest; i++) {
+    futureValue *= annualReturnRate;
+    futureValue += annualRegularContribution;
+  }
+
+  return futureValue;
+}
 
 client.on(Events.InteractionCreate, async interaction => {
   console.log("InteractionCreate", interaction);
