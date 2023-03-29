@@ -4,7 +4,7 @@ import testChannel from './test-slack-channel-message.json' assert { type: 'json
 import testDiscord from './test-discord.json' assert { type: 'json' };
 
 import { handler as slack } from "./slack.mjs";
-import { handler as discord } from "./discord.mjs";
+import { handler as discord } from "./discord-fully-serverless.mjs";
 
 console.log(await slack(testImIncomplete));
 console.log(await slack(testIm));
