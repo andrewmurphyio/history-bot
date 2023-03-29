@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbox Financial Modelling Example</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      #response div {
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Chatbox Financial Modelling Example</h1>
+    <form id="chat-form">
+      <label for="user-input">Enter your message:</label>
+      <!-- <input type="text" id="user-input" required autofocus value="Please calculate balance I would have when I retire if I am 37, want to retire at 65. I have about 80k stashed away. I want a return that's between 6 and 8% per year. Assume half way. I can put away $1k a month" /> -->
+      <!-- <input type="text" id="user-input" required autofocus value="How much super will I have when I retire" /> -->
+      <input type="text" id="user-input" required autofocus value="How much super does my employer give me?" />
+      <button type="submit">Send Message</button>
+    </form>
+    <script>
+      const params = decodeURI(window.location.search)
+        .replace("?", "")
+        .split("&")
+        .map((param) => param.split("="))
+        .reduce((values, [key, value]) => {
+          values[key] = value;
+          return values;
+        }, {});
+
+      // console.log("params", params);
+      const apiKey = params["apiKey"];
+      console.log("apiKey", apiKey);
+      const model = params["model"] ?? "gpt-3.5-turbo";
+      console.log("model", model);
+    </script>
+    <div id="response"></div>
+    <script>
+      const form = document.getElementById("chat-form");
+      const userInput = document.getElementById("user-input");
+      const responseDiv = document.getElementById("response");
+      const submitButton = form.querySelector("button");
+
+      let messageHistory = null;
+
+      async function callOpenAIChatAPI(message, userRole) {
+        if (messageHistory === null) {
+          let prompt = "";
+          const url = "/prompt.md";
+
+          try {
+            const response = await axios.get(url);
+            prompt = response.data;
+          } catch (error) {
+            console.error(error);
+          }
+
+          messageHistory = [
+            {
+              role: "system",
+              content: prompt,
+            },
+          ];
+        }
+
+        const headers = {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        };
+
+        messageHistory.push({
+          role: userRole,
+          content: message,
+        });
+
+        try {
+          const response = await axios.post(
+            "https://api.openai.com/v1/chat/completions",
+            {
+              messages: messageHistory,
+              model: model,
+              temperature: 0.7,
+            },
+            { headers: headers }
+          );
+
+          const message = response.data.choices[0];
+
+          messageHistory.push(message.message);
+
+          return message;
+        } catch (error) {
+          console.error(error);
+          return {
+            message: { content: "An error occurred while calling the API." },
+            role: "error",
+          };
+        }
+      }
+
+      async function sendMessage(userMessage, userRole) {
+        const userRoleTitleCase =
+          userRole.charAt(0).toUpperCase() + userRole.slice(1).toLowerCase();
+        userInput.value = "";
+        userInput.disabled = true;
+        submitButton.disabled = true;
+
+        if (!userMessage.startsWith("Model:")) {
+            const userMessageElement = document.createElement("div");
+            userMessageElement.textContent = `${userRoleTitleCase}: ${userMessage}`;
+            responseDiv.appendChild(userMessageElement);
+        }
+
+        const response = await callOpenAIChatAPI(userMessage, userRole);
+        console.log("response", response);
+
+        const role = response.message.role;
+        const content = response.message.content;
+
+        let obj;
+        let message;
+        let command;
+        try {
+          obj = JSON.parse(content);
+          console.log(obj);
+          message = obj.message;
+          command = obj.command;
+        } catch (error) {
+          console.log("error", error);
+          message = content;
+        }
+
+        const assistantMessageElement = document.createElement("div");
+        const roleTitleCase =
+          role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+        assistantMessageElement.innerHTML = `${roleTitleCase}: ${message}`;
+        responseDiv.appendChild(assistantMessageElement);
+
+        if (command && command.command) {
+            const commandValue = await callCommand(command.command, command.arguments);
+            console.log("commandValue", commandValue);
+            const modelResponse = { command: command.command, uuid: command.uuid, value: commandValue };
+            await sendMessage(`Model: ${JSON.stringify(modelResponse)}`, "user");
+        }
+
+        userInput.disabled = false;
+        submitButton.disabled = false;
+        userInput.focus();
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const userRole = "user";
+        const userMessage = userInput.value;
+
+        await sendMessage(userMessage, userRole);
+      });
+
+      async function callCommand(commandName, args) {
+        if (commandName === "calculateBalance") {
+            return await calculateBalance(args);
+        } else {
+            throw Error(`Invalid commandName: ${commandName}`);
+        }
+      }
+
+      async function calculateBalance(args) {
+        const currentValue = args.find(v => v.name === "currentValue").value;
+        console.log("currentValue", currentValue);
+        const yearsToInvest = args.find(v => v.name === "yearsToInvest").value;
+        console.log("yearsToInvest", yearsToInvest);
+        const returnPercentage = args.find(v => v.name === "returnPercentage").value;
+        console.log("returnPercentage", returnPercentage);
+        const annualRegularContribution = args.find(v => v.name === "annualRegularContribution").value;
+        console.log("annualRegularContribution", annualRegularContribution);
+        
+        const annualReturnRate = 1 + (returnPercentage / 100);
+        let futureValue = currentValue;
+
+        for (let i = 0; i < yearsToInvest; i++) {
+            futureValue *= annualReturnRate;
+            futureValue += annualRegularContribution;
+        }
+
+        return futureValue;
+      }
+    </script>
+  </body>
+</html>
